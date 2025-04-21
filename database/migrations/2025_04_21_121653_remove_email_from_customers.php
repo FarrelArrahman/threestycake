@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->integer('price')->after('name')->comment('Harga Produk');
+        Schema::table('customers', function (Blueprint $table) {
+            $table->dropColumn('email');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn('price');
+        Schema::table('customers', function (Blueprint $table) {
+            $table->string('email')->unique()->after('phone_number')->comment('Email Pelanggan');
         });
     }
 };

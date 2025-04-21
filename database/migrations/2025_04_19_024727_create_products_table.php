@@ -13,13 +13,11 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->nullable()->comment('Kode Produk');
             $table->string('name')->comment('Nama Produk');
-            $table->string('category')->nullable()->comment('Kategori');
-            $table->string('stock')->nullable()->comment('Stok');
-            $table->string('unit')->nullable()->comment('Satuan');
-            // $table->string('image')->nullable()->comment('Gambar');
-            // $table->string('status')->nullable()->comment('Status');
+            $table->string('description')->nullable()->comment('Deskripsi');
+            $table->string('price')->comment('Harga');
+            $table->string('image')->nullable()->comment('Gambar');
+            $table->enum('status', ['active', 'inactive'])->default('active')->comment('Status');
             $table->timestamps();
         });
     }

@@ -4,18 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Order extends Model
+class ProductStock extends Model
 {
     protected $fillable = [
-        'customer_id',
-        'status',
+        'product_id',
+        'expiry_date',
+        'stock_in_date',
+        'stock_out_date',
     ];
-
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class);
-    }
-
+    
     public function product()
     {
         return $this->belongsTo(Product::class);
@@ -24,5 +21,10 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function getAvailableStockAttribute()
+    {
+        return $this->whereNull('stock_out_date');
     }
 }

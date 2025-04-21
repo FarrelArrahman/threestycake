@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PurchaseItemResource\Pages;
-use App\Filament\Resources\PurchaseItemResource\RelationManagers;
-use App\Models\PurchaseItem;
+use App\Filament\Resources\OrderItemResource\Pages;
+use App\Filament\Resources\OrderItemResource\RelationManagers;
+use App\Models\OrderItem;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -17,9 +17,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class PurchaseItemResource extends Resource
+class OrderItemResource extends Resource
 {
-    protected static ?string $model = PurchaseItem::class;
+    protected static ?string $model = OrderItem::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -27,34 +27,13 @@ class PurchaseItemResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $purchase = new \App\Models\Purchase();
-        if (request()->has('purchase_id')) {
-            $purchase = \App\Models\Purchase::find(request('purchase_id'));
+        $order = new \App\Models\Order();
+        if (request()->has('order_id')) {
+            $order = \App\Models\Order::find(request('order_id'));
         }
 
         return $form
             ->schema([
-                Grid::make()
-                    ->schema([
-                        Forms\Components\Hidden::make('purchase_id')
-                            ->default($purchase->id ?? request('purchase_id')),
-                        DatePicker::make('purchase_date')
-                            ->label('Tanggal Pembelian')
-                            ->required()
-                            ->default($purchase->purchase_date ?? now())
-                            ->placeholder('Select a date')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('supplier_id')
-                            ->label('Supplier')
-                            ->required()
-                            ->disabled()
-                            ->default($purchase->supplier?->name ?? ''),
-                        Forms\Components\TextInput::make('email')
-                            ->label('Email Supplier')
-                            ->required()
-                            ->disabled()
-                            ->default($purchase->supplier?->email ?? ''),
-                    ])->columns(3),
                     Grid::make(2)
                         ->schema([
                             Forms\Components\Select::make('product_id')
@@ -118,9 +97,9 @@ class PurchaseItemResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPurchaseItems::route('/'),
-            'create' => Pages\CreatePurchaseItem::route('/create'),
-            'edit' => Pages\EditPurchaseItem::route('/{record}/edit'),
+            'index' => Pages\ListOrderItems::route('/'),
+            'create' => Pages\CreateOrderItem::route('/create'),
+            'edit' => Pages\EditOrderItem::route('/{record}/edit'),
         ];
     }
 }

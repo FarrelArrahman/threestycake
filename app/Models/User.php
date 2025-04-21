@@ -55,4 +55,14 @@ class User extends Authenticatable implements HasAvatar
         $avatarColumn = config('filament-edit-profile.avatar_column', 'avatar_url');
         return $this->$avatarColumn ? Storage::url($this->$avatarColumn) : null;
     }
+
+    public function customer()
+    {
+        return $this->hasOne(Customer::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }
