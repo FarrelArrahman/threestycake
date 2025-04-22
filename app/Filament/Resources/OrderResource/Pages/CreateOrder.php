@@ -13,13 +13,14 @@ class CreateOrder extends CreateRecord
 
     protected function getFormActions(): array
     {
-        return [];
+        return [
+            $this->getCreateFormAction(),
+            $this->getCancelFormAction(),
+        ];
     }
 
     protected function getRedirectUrl(): string
     {
-        return route('filament.admin.resources.order-items.create', [
-            'order_id' => $this->record->id,
-        ]);
+        return route('filament.admin.resources.orders.index');
     }
 }

@@ -25,4 +25,29 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function getTotalPriceAttribute()
+    {
+        $orderTotal = $this->orderItems->sum(function ($item) {
+            return $item->price * $item->quantity;
+        });
+
+        $customizationTotal = $this->orderItems->sum(function ($item) {
+            return $item->customizations->sum(function ($customization) {
+                return $customization->productCustomization->price;
+            });
+        });
+
+        return $orderTotal + $customizationTotal;
+    }
+    
+    public function getTotalQuantityAttribute()
+    {
+        return $this->orderItems->sum('quantity');
+    }
 }
