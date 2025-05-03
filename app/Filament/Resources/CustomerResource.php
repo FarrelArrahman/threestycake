@@ -31,8 +31,12 @@ class CustomerResource extends Resource
                 Forms\Components\TextInput::make('phone_number')
                     ->label('Nomor Telepon')
                     ->unique(ignoreRecord: true),
-                Forms\Components\TextInput::make('email')
-                    ->label('Email'),
+                Forms\Components\Group::make()
+                    ->relationship('user')
+                    ->schema([
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email'),
+                        ]),
                 Forms\Components\TextInput::make('address')
                     ->label('Alamat'),
             ]);
@@ -47,7 +51,7 @@ class CustomerResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone_number')
                     ->label('Nomor Telepon'),
-                Tables\Columns\TextColumn::make('email')
+                Tables\Columns\TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('address')

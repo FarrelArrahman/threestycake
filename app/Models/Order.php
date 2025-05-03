@@ -38,8 +38,8 @@ class Order extends Model
         });
 
         $customizationTotal = $this->orderItems->sum(function ($item) {
-            return $item->customizations->sum(function ($customization) {
-                return $customization->productCustomization->price;
+            return $item->customizations->sum(function ($customization) use ($item) {
+                return $customization->productCustomization->price * $item->quantity;
             });
         });
 
@@ -49,5 +49,10 @@ class Order extends Model
     public function getTotalQuantityAttribute()
     {
         return $this->orderItems->sum('quantity');
+    }
+
+    public function getOrderCodeAttribute()
+    {
+        return 'ORD-' . date('ymd') . str_pad($this->id, 3, '0', STR_PAD_LEFT);
     }
 }

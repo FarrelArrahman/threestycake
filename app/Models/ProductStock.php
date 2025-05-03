@@ -27,4 +27,9 @@ class ProductStock extends Model
     {
         return $this->whereNull('stock_out_date');
     }
+
+    public function getIsAvailableAttribute()
+    {
+        return $this->stock_out_date == null;
+    }
 }

@@ -8,9 +8,11 @@ use App\Models\Order;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
+use Guava\FilamentNestedResources\Concerns\NestedPage;
 
 class CreateOrderItem extends CreateRecord
 {
+    use NestedPage;
     protected static string $resource = OrderItemResource::class;
 
     protected function getFormActions(): array
@@ -28,14 +30,5 @@ class CreateOrderItem extends CreateRecord
         return route('filament.admin.resources.order-items.create', [
             'order_id' => $this->record->order_id,
         ]);
-    }
-
-    public function getFooterWidgets(): array
-    {
-        return [
-            OrderItemWidget::make([
-                'record' => request('order_id'),
-            ]),
-        ];
     }
 }

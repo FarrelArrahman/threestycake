@@ -20,6 +20,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
@@ -123,33 +124,33 @@ class ProductResource extends Resource
                                     ->columns(2)
                                     ->itemLabel(fn (array $state): ?string => $state['customization_type'] ?? 'Variasi')
                             ]),
-                        Tabs\Tab::make('Stok')
-                            ->schema([
-                                Hidden::make('available_stock_count')
-                                    ->disabled(),
-                                Repeater::make('stocks')
-                                    ->collapsible()
-                                    ->cloneable()
-                                    ->label('Stok Produk')
-                                    ->relationship()
-                                    ->schema([
-                                        DatePicker::make('stock_in_date')
-                                            ->label('Tanggal Masuk Stok')
-                                            ->required()
-                                            ->default(now())
-                                            ->live(onBlur: true),
-                                        DatePicker::make('stock_out_date')
-                                            ->label('Tanggal Keluar Stok')
-                                            ->helperText('Kosongkan jika belum keluar stok'),
-                                        DatePicker::make('expiry_date')
-                                            ->label('Tanggal Kadaluarsa')
-                                            ->required()
-                                            ->default(now()->addDays(7)),
-                                    ])
-                                    ->columns(3)
-                                    ->itemLabel(fn (array $state): ?string => $state['stock_in_date'] ?? 'Stok Produk')
-                                    ->defaultItems(0)
-                            ])
+                        // Tabs\Tab::make('Stok')
+                        //     ->schema([
+                        //         Hidden::make('available_stock_count')
+                        //             ->disabled(),
+                        //         Repeater::make('stocks')
+                        //             ->collapsible()
+                        //             ->cloneable()
+                        //             ->label('Stok Produk')
+                        //             ->relationship()
+                        //             ->schema([
+                        //                 DatePicker::make('expiry_date')
+                        //                     ->label('Tanggal Kadaluarsa')
+                        //                     ->required()
+                        //                     ->default(now()->addDays(7)),
+                        //                 DatePicker::make('stock_in_date')
+                        //                     ->label('Tanggal Masuk Stok')
+                        //                     ->required()
+                        //                     ->default(now())
+                        //                     ->live(onBlur: true),
+                        //                 DatePicker::make('stock_out_date')
+                        //                     ->label('Tanggal Keluar Stok')
+                        //                     ->helperText('Kosongkan jika belum keluar stok'),
+                        //             ])
+                        //             ->columns(3)
+                        //             ->itemLabel(fn (array $state): ?string => $state['stock_in_date'] ?? 'Stok Produk')
+                        //             ->defaultItems(0)
+                        //     ])
                         ])
                         ->columnSpanFull(),
                         
@@ -194,6 +195,13 @@ class ProductResource extends Resource
             ->actions([
                 EditAction::make(),
                 DeleteAction::make(),
+                Action::make('Stok')
+                    ->label('Stok')
+                    ->color('info')
+                    ->icon('heroicon-c-circle-stack')
+                    ->url(fn (Product $record): string => route('filament.admin.resources.products.stock', $record))
+                    ->openUrlInNewTab()
+                    ->hidden(!auth()->user()->isAdmin()),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -206,6 +214,7 @@ class ProductResource extends Resource
     {
         return [
             'index' => Pages\ManageProducts::route('/'),
+            'stock' => Pages\ManageProductStocks::route('/{record}/stock'),
         ];
     }
 

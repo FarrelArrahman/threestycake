@@ -88,12 +88,10 @@ class BestSellingProductsChart extends ChartWidget
     protected function getData(): array
     {
         $data = DB::table('order_items')
-            ->join('product_stocks', 'order_items.product_stock_id', '=', 'product_stocks.id')
-            ->join('products', 'product_stocks.product_id', '=', 'products.id')
+            ->join('products', 'products.id', '=', 'order_items.product_id')
             ->selectRaw('products.name as label, SUM(order_items.quantity) as total')
             ->groupBy('products.name')
             ->orderByDesc('total')
-            ->limit(10)
             ->pluck('total', 'label')
             ->toArray();
 

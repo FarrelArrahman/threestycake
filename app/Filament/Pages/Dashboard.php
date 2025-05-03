@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\UserWelcomeWidget;
 use Filament\Pages\Page;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
@@ -45,10 +46,17 @@ class Dashboard extends Page
 
     public function getVisibleWidgets()
     {
+        if (auth()->user()->isAdmin()) {
+            return [
+                \App\Filament\Widgets\StatsDashboard::class,
+                \App\Filament\Widgets\SalesChart::class,
+                \App\Filament\Widgets\BestSellingProductsChart::class,
+            ];
+        }
+
+        // Kalau user biasa
         return [
-            \App\Filament\Widgets\StatsDashboard::class,
-            \App\Filament\Widgets\SalesChart::class,
-            \App\Filament\Widgets\BestSellingProductsChart::class,
+            UserWelcomeWidget::class,
         ];
     }
 }

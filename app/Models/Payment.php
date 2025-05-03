@@ -20,4 +20,9 @@ class Payment extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function getStatusAttribute()
+    {
+        return $this->attributes['status'] ?? 'not yet';
+    }
 }

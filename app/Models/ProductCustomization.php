@@ -18,4 +18,9 @@ class ProductCustomization extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function orderItemCustomizations()
+    {
+        return $this->hasMany(OrderItemCustomization::class);
+    }
 }

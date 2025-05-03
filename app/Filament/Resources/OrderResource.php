@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
+use App\Filament\Resources\OrderResource\RelationManagers\OrderItemsRelationManager;
 use App\Models\Order;
 use App\Models\ProductStock;
 use Filament\Tables\Actions\Action;
@@ -11,6 +12,7 @@ use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -27,14 +29,20 @@ use Filament\Forms\Components\Wizard;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Page;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Guava\FilamentNestedResources\Ancestor;
+use Guava\FilamentNestedResources\Concerns\NestedResource;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class OrderResource extends Resource
 {
+    use NestedResource;
+
     protected static ?string $model = Order::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -77,146 +85,6 @@ class OrderResource extends Resource
                                     ->default(fn () => auth()->user()?->customer?->id)
                                     ->required(),
                             ]),
-                        Tabs\Tab::make('Produk Pesanan')
-                            ->schema([
-                                Repeater::make('orderItems')
-                                    ->collapsible()
-                                    ->cloneable()
-                                    ->label('Produk')
-                                    ->relationship()
-                                    ->schema([
-                                        Select::make('product_stock_id')
-                                            ->label('Produk')
-                                            ->options(ProductStock::with('product')
-                                                ->whereHas('product', function (Builder $query) {
-                                                    $query->where('status', 'active');
-                                                })
-                                                ->whereNull('stock_out_date')
-                                                ->whereIn('id', function ($query) {
-                                                    $query->selectRaw('MIN(id)')
-                                                        ->from('product_stocks')
-                                                        ->whereNull('stock_out_date')
-                                                        ->groupBy('product_id');
-                                                })
-                                                ->get()
-                                                ->filter(fn ($stock) => $stock->product && $stock->product->name)->pluck('product.name', 'id'))
-                                                ->reactive()
-                                                ->afterStateUpdated(function ($state, callable $set, callable $get) use ($updateTotals, $updateGrandTotal) {
-                                                    $stock = \App\Models\ProductStock::find($state);
-                                                    if (!$stock) return;
-                                                    $set('selected_product_id', $state);
-                                                    $set('price', $stock->product->price);
-                                                    $set('available_stock', $stock->product->available_stock->count());
-                                                    $set('quantity', 1); // reset jumlah
-
-                                                    $updateTotals($get, $set);
-                                                    // $updateGrandTotal($get, $set);
-                                                }
-                                                )
-                                            ->required()
-                                            ->searchable()
-                                            ->live(onBlur: true)
-                                            ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
-                                        TextInput::make('price')
-                                            ->label('Harga')
-                                            ->readOnly()
-                                            ->required(),
-                                        TextInput::make('quantity')
-                                            ->label('Jumlah')
-                                            ->type('number')
-                                            ->numeric()
-                                            ->minValue(1)
-                                            ->step(1)
-                                            ->extraAttributes(function (callable $get) {
-                                                $max = $get('available_stock');
-                                                return ['max' => $max];
-                                            })
-                                            ->required()
-                                            ->reactive()
-                                            ->afterStateUpdated(function ($state, callable $set, callable $get) use ($updateTotals, $updateGrandTotal) {
-                                                $custom = $get('customizations_total') ?? 0;
-                                                $set('total', ($state * $get('price')) + $custom);
-                                                // $updateTotals($get, $set);
-                                                // $updateGrandTotal($get, $set);
-                                            }),
-                                        TextInput::make('total')
-                                            ->label('Subtotal')
-                                            ->disabled()
-                                            ->dehydrated(false)
-                                            ->reactive(),
-                                        Textarea::make('custom_note')
-                                            ->label('Catatan Tambahan')
-                                            ->columnSpanFull(),
-                                        Repeater::make('customizations')
-                                            ->label('Kustomisasi')
-                                            ->helperText('Hapus atau kosongkan jika tidak ingin menambahkan kustomisasi')
-                                            ->relationship()
-                                            ->schema([
-                                                Select::make('product_customization_id')
-                                                    ->label('Tipe')
-                                                    ->options(function (callable $get) {
-                                                        $productId = $get('../../selected_product_id'); // Naik ke parent
-                                                        if (!$productId) return [];
-                                        
-                                                        return \App\Models\ProductStock::find($productId)
-                                                            ->product
-                                                            ->customizations
-                                                            ->where('status', 'active')
-                                                            ->pluck('customization_type', 'id')
-                                                            ->toArray();
-                                                    })
-                                                    ->disabled(fn (callable $get) => !$get('../../selected_product_id'))
-                                                    ->required()
-                                                    ->searchable()
-                                                    ->reactive()
-                                                    ->afterStateUpdated(function ($state, callable $set, callable $get) use ($updateTotals, $updateGrandTotal) {
-                                                        $customization = \App\Models\ProductCustomization::find($state);
-                                                        if (!$customization) return;
-
-                                                        $set('selected_customization_id', $state);
-                                                        $set('price', $customization->price);
-                                                        $set('customization_value', 1);
-                                                        $set('subtotal', $customization->price * 1); // default quantity
-
-                                                        // $updateTotals($get, $set);
-                                                        // $updateGrandTotal($get, $set);
-                                                    }
-                                                    )
-                                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
-                                                TextInput::make('price')
-                                                    ->label('Harga')
-                                                    ->readOnly()
-                                                    ->required(),
-                                                TextInput::make('customization_value')
-                                                    ->label('Quantity')
-                                                    ->numeric()
-                                                    ->minValue(1)
-                                                    ->step(1)
-                                                    ->maxValue(1)
-                                                    ->default(1)
-                                                    ->required()
-                                                    ->readOnly()
-                                                    ->reactive()
-                                                    ->afterStateUpdated(function ($state, callable $get, callable $set) use ($updateTotals) {
-                                                        $custom = $get('customizations_total') ?? 0;
-                                                        $set('subtotal', ($state * $get('price')) + $custom);
-                                                        // $updateTotals($get, $set);
-                                                    }),
-                                                TextInput::make('subtotal')
-                                                    ->label('Subtotal (Kustomisasi)')
-                                                    ->disabled()
-                                                    ->dehydrated(false)
-                                            ])
-                                            ->columns(4)
-                                            ->columnSpanFull(),
-                                    ])
-                                    ->columns(4)
-                                    ->itemLabel(fn (array $state): ?string => $state['customization_type'] ?? 'Variasi')
-                                    ->reactive()
-                                    ->afterStateUpdated(function (callable $get, callable $set) use ($updateTotals) {
-                                        $updateTotals($get, $set);
-                                    }),
-                            ]),
                         ])
                         ->columnSpanFull(),
             ]);
@@ -226,6 +94,10 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('order_code')
+                    ->label('Kode Pesanan')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('order_date')
                     ->label('Tanggal Pemesanan')
                     ->dateTime('d/m/Y')
@@ -260,6 +132,7 @@ class OrderResource extends Resource
                         'pending' => 'warning',
                         'confirmed' => 'success',
                         'rejected' => 'danger',
+                        default => 'secondary',
                     })
             ])
             ->modifyQueryUsing(function (Builder $query) {
@@ -281,18 +154,18 @@ class OrderResource extends Resource
                     ->toggle(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->label('Edit')
+                ActionGroup::make([
+                    Tables\Actions\EditAction::make()
+                    ->label('Ubah Pesanan')
                     ->icon('heroicon-c-pencil')
                     ->color('primary')
-                    ->openUrlInNewTab()
                     ->hidden(function (Order $record) {
                         return auth()->user()?->customer?->id !== $record->customer_id || $record->status !== 'pending';
                     }),
                 Tables\Actions\DeleteAction::make()
                     ->hidden(fn (Order $record): bool => $record->status !== 'pending'),
                 Tables\Actions\Action::make('payment')
-                    ->label('Bayar')
+                    ->label('Pembayaran')
                     ->url(fn (Order $record): string => route('filament.admin.resources.orders.payment', $record))
                     ->icon('heroicon-o-credit-card')
                     ->color('info')
@@ -304,12 +177,13 @@ class OrderResource extends Resource
                     ->url(fn (Order $record): string => Storage::url($record->payment->proof_image))
                     ->icon('heroicon-c-receipt-percent')
                     ->color('success')
-                    ->openUrlInNewTab()
                     ->hidden(fn (Order $record): bool => $record->status !== 'paid' && $record->status !== 'delivered'),
+                Tables\Actions\ViewAction::make()
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
                     BulkAction::make('confirm')
                         ->label('Konfirmasi Pembayaran')
                         ->action(function (Collection $records) {
@@ -363,15 +237,15 @@ class OrderResource extends Resource
                     ->icon('heroicon-m-plus')
                     ->button(),
             ])
-            ->emptyStateHeading('Belum ada pesanan')
+            ->emptyStateHeading('Tidak ada pesanan')
             ->emptyStateIcon('heroicon-c-shopping-bag')
-            ->emptyStateDescription('Pesanan yang Anda buat akan muncul di sini. Anda dapat membuat pesanan baru dengan mengklik tombol "Buat Pesanan".');
+            ->emptyStateDescription('Pesanan yang dibuat akan muncul di sini.');
     }
 
     public static function getRelations(): array
     {
         return [
-            //
+            OrderItemsRelationManager::class,
         ];
     }
 
@@ -381,7 +255,21 @@ class OrderResource extends Resource
             'index' => Pages\ListOrders::route('/'),
             'create' => Pages\CreateOrder::route('/create'),
             'edit' => Pages\EditOrder::route('/{record}/edit'),
+            'view' => Pages\ViewOrder::route('/{record}'),
             'payment' => Pages\PaymentOrder::route('/{record}/payment'),
+
+            'orderItems' => Pages\ManageOrderItems::route('/{record}/order-items'),
+            'orderItems.create' => Pages\CreateOrderItem::route('/{record}/order-items/create'),
         ];
+    }
+
+    public static function getAncestor(): ?Ancestor
+    {
+        return null;
+    }
+
+    public static function getBreadcrumbRecordLabel(Order $record)
+    {
+        return $record->order_code;
     }
 }

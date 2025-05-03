@@ -16,6 +16,11 @@ class Product extends Model
         return $this->hasMany(ProductStock::class);
     }
 
+    public function orderItem()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function getAvailableStockAttribute()
     {
         return $this->stocks()->whereNull('stock_out_date');
