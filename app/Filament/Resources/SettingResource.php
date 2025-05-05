@@ -31,7 +31,7 @@ class SettingResource extends Resource
             ->schema([
                 TextInput::make('type')
                     ->label('Tipe Pengaturan')
-                    ->unique()
+                    ->unique(ignoreRecord: true)
                     ->disabled()
                     ->dehydrated(false)
                     ->required(),

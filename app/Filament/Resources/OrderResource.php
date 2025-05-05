@@ -272,4 +272,5 @@ class OrderResource extends Resource
     {
         return $record->order_code;
     }
+
 }

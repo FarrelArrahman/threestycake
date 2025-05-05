@@ -27,7 +27,7 @@ class CreateOrderItem extends CreateRelatedRecord
     protected function getRedirectUrl(): string
     {
         return route('filament.admin.resources.orders.edit', [
-            'order_id' => $this->getOwnerRecord()->id,
+            'record' => $this->getOwnerRecord()->id,
         ]);
     }
 

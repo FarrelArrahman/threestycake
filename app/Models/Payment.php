@@ -25,4 +25,9 @@ class Payment extends Model
     {
         return $this->attributes['status'] ?? 'not yet';
     }
+
+    public function confirmed()
+    {
+        return $this->status === 'confirmed';
+    }
 }

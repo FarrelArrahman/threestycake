@@ -20,7 +20,8 @@ class EditOrderItem extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->successRedirectUrl(route('filament.admin.resources.orders.edit', ['record' => $this->record->order_id])),
         ];
     }
 }
